@@ -1,7 +1,7 @@
-# diskguard
+# diskguard(1)
 
 ```bash
-·▄▄▄▄  ▪  .▄▄ · ▄ •▄  ▄▄ • ▄• ▄▌ ▄▄▄· ▄▄▄  ·▄▄▄▄  
+ ·▄▄▄▄  ▪  .▄▄ · ▄ •▄  ▄▄ • ▄• ▄▌ ▄▄▄· ▄▄▄  ·▄▄▄▄  
  ██▪ ██ ██ ▐█ ▀. █▌▄▌▪▐█ ▀ ▪█▪██▌▐█ ▀█ ▀▄ █·██▪ ██ 
  ▐█· ▐█▌▐█·▄▀▀▀█▄▐▀▀▄·▄█ ▀█▄█▌▐█▌▄█▀▀█ ▐▀▀▄ ▐█· ▐█▌
  ██. ██ ▐█▌▐█▄▪▐█▐█.█▌▐█▄▪▐█▐█▄█▌▐█ ▪▐▌▐█•█▌██. ██ 
@@ -9,6 +9,8 @@
 ```
 
 `diskguard` is a software based, USB disk write blocker for MacOS. It works by detecting when an external USB disk is mounted and then remounts it in readonly mode.
+
+> **IMPORTANT:** This method may not be forensically sound. If chain of custody is important use a hardware based write-blocker instead of this tool. 
 
 ## Install
 
@@ -20,24 +22,27 @@
 
 `diskguard` provides multiple modes of functioning. When run, you can interactively select the mode most suitable for your purposes.
 
-### 1. Write block a specific volume
+```
+Usage: ./diskguard.sh <(optional) disk identifier> [-h] [-v] [-a] [-b] [-w] [-l] [-t]
+  -h, --help    Display this help message.
+  -v, --version Display version information.
+  -a, --all     Set readonly all USB volumes.
+  -b, --block   Write-block a single USB volume. Disk identifier argument required.
+  -w, --watch   Watch for newly mounted volumes.
+  -l, --list    Display all USB volumes. Default.
+  -t, --test    Test a volume is readonly. Disk identifier argument required.
+```
 
-In this mode, you must enter a specific disk identifier, eg. `disk2s1`.
+### Examples
 
-### 2. Write block all external USB volumes
+```bash
+# Write-block a single drive
+$ ./diskguard.sh disk2s2 -b
+```
 
-This mode will detect and remount all external USB disks in readonly mode.
-
-### 3. Monitor for external USB volumes
-
-This mode will watch for new volumes to be mounted and then automatically remount them in readonly mode.
-
-### 4. Test write protection
-
-This mode allows you to test a specific disk to see if it's mounted as readonly. You must supply a disk identifier, eg. `disk2s2`
-
-### 5. Refresh list
-
-This option refreshes the list of USB disks currently mounted on the system. 
+```bash
+# Watch for newly attached drives
+$ ./diskguard.sh -w
+```
 
 
