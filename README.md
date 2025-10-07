@@ -15,12 +15,11 @@
 ## Install
 
 1. Clone this repository
-2. Run the script (requires root) `sudo ./diskguard.sh`
-3. Follow the interactive prompts
+2. Intialise git submodules `git submodule init`
+3. Run `chmod +x ./diskguard.sh` to make the script executable
+4. Run `./diskguard.sh`
 
 ## Usage
-
-`diskguard` provides multiple modes of functioning. When run, you can interactively select the mode most suitable for your purposes.
 
 ```
 Usage: ./diskguard.sh <(optional) disk identifier> [-h] [-v] [-a] [-b] [-w] [-l] [-t]
@@ -34,6 +33,14 @@ Usage: ./diskguard.sh <(optional) disk identifier> [-h] [-v] [-a] [-b] [-w] [-l]
 ```
 
 ### Examples
+
+```bash
+# List external USB drives
+$ ./diskguard.sh -l
+STATUS          ID              NAME            SIZE            FILE SYSTEM             MOUNT
+[WRITEABLE]     disk4s1         USB0-64GB       61.5 GB         ExFAT                   /Volumes/USB0-64GB
+[WRITEABLE]     disk5s1         USB-DUAL-1      30.8 GB         HFS+                    /Volumes/USB-DUAL-1
+```
 
 ```bash
 # Write-block a single drive
