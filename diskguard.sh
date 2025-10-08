@@ -31,10 +31,6 @@ declare -a DISKS_ARR=()
 LOG_PATH='/var/log/diskguard/'
 LOG_FILE='diskguard.log'
 
-TMP_PATH='/tmp/diskguard/'
-TMP_FILE_PREV='diskguard_watch_prev'
-TMP_FILE_NEXT='diskguard_watch_next'
-
 # Display ASCII art banner
 banner() {
   echo "·▄▄▄▄  ▪  .▄▄ · ▄ •▄  ▄▄ • ▄• ▄▌ ▄▄▄· ▄▄▄  ·▄▄▄▄  ";
@@ -47,6 +43,7 @@ banner() {
 # Display usage information
 usage() {
   echo "Usage: $0 <disk identifier (optional)> [-h] [-v] [-a] [-w] [-l] [-t]"
+  echo ""
   echo "  -h, --help    Display this help message."
   echo "  -v, --version Display version information."
   echo "  -a, --all     Set readonly all USB volumes."
@@ -54,6 +51,7 @@ usage() {
   echo "  -w, --watch   Watch for newly mounted volumes."
   echo "  -l, --list    Display all USB volumes. Default."
   echo "  -t, --test    Test a volume is readonly. Disk identifier argument required."
+  echo ""
   exit 0
 }
 
@@ -88,29 +86,10 @@ ensure_log_file() {
   ensure_file "$LOG_PATH$LOG_FILE"
 }
 
-# Create temporary directory if it doesn't exist
-ensure_tmp_path() {
-  ensure_dir "$TMP_PATH"
-}
-
-# Create temporary files if they don't exist
-ensure_tmp_files() {
-  ensure_file "$TMP_PATH$TMP_FILE_PREV"
-  ensure_file "$TMP_PATH$TMP_FILE_NEXT"
-}
-
-# Remove temporary files
-cleanup_tmp_files() {
-  rm -f "$TMP_PATH$TMP_FILE_PREV"
-  rm -f "$TMP_PATH$TMP_FILE_NEXT"
-}
-
 # Initialize all required directories and files
 ensure_paths() {
   ensure_log_path
   ensure_log_file
-  ensure_tmp_path
-  ensure_tmp_files
 }
 
 # Perform initial setup checks and initialization
@@ -118,11 +97,6 @@ setup() {
   check_permissions
   check_darwin
   ensure_paths
-}
-
-# Set up cleanup trap for temporary files
-cleanup() {
-  trap cleanup_tmp_files EXIT
 }
 
 # Create directory if it doesn't exist
@@ -191,12 +165,12 @@ block_one() {
   fi
 }
 
-# Watch for newly mounted volumes (not implemented)
+# Watch for newly mounted volumes
 watch() {
-  echo -e "Watching for new volumes..."
+  echo -e "Watching for new volumes... (ctrl+c to cancel)"
   local PREV_DISKS_ARR=("${DISKS_ARR[@]}")
   while true; do 
-    get_disks
+    get_disk_ids
     if [ ${#DISKS_ARR[@]} -gt ${#PREV_DISKS_ARR[@]} ]; then
       for i in "${DISKS_ARR[@]}"; do
         if [[ ! "${PREV_DISKS_ARR[*]}" =~ ${i} ]]; then

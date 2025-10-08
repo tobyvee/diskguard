@@ -17,12 +17,13 @@
 1. Clone this repository
 2. Intialise git submodules `git submodule init`
 3. Run `chmod +x ./diskguard.sh` to make the script executable
-4. Run `./diskguard.sh`
+4. Run `./diskguard.sh` (requires root permissions)
 
 ## Usage
 
 ```
 Usage: ./diskguard.sh <(optional) disk identifier> [-h] [-v] [-a] [-b] [-w] [-l] [-t]
+
   -h, --help    Display this help message.
   -v, --version Display version information.
   -a, --all     Set readonly all USB volumes.
@@ -37,6 +38,7 @@ Usage: ./diskguard.sh <(optional) disk identifier> [-h] [-v] [-a] [-b] [-w] [-l]
 ```bash
 # List external USB drives
 $ ./diskguard.sh -l
+
 STATUS          ID              NAME            SIZE            FILE SYSTEM             MOUNT
 [WRITEABLE]     disk4s1         USB0-64GB       61.5 GB         ExFAT                   /Volumes/USB0-64GB
 [WRITEABLE]     disk5s1         USB-DUAL-1      30.8 GB         HFS+                    /Volumes/USB-DUAL-1
@@ -45,11 +47,21 @@ STATUS          ID              NAME            SIZE            FILE SYSTEM     
 ```bash
 # Write-block a single drive
 $ ./diskguard.sh disk2s2 -b
+
+Volume USB0-64GB on disk5s1 unmounted
+Volume USB0-64GB on /dev/disk5s1 mounted
+Success: disk5s1 is read-only
 ```
 
 ```bash
 # Watch for newly attached drives
 $ ./diskguard.sh -w
+
+Watching for new volumes...
+New USB volume detected!
+Volume USB0-64GB on disk5s1 unmounted
+Volume USB0-64GB on /dev/disk5s1 mounted
+Success: disk5s1 is read-only
 ```
 
 
