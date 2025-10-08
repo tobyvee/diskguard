@@ -115,6 +115,7 @@ ensure_file() {
 
 # Append message to log file
 # TODO: Apply standard log format
+# TODO: Implement logging
 append_log() {
   local LOG
   LOG="[$(timestamp)] $1"

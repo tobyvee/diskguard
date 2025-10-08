@@ -32,18 +32,19 @@ teardown() {
 @test "displays version information" {
   run "$DISKGUARD" --version
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "1.0.0" ]]
+  [[ "$output" =~ 1.0.0 ]]
 }
 
 @test "displays version with -v flag" {
   run "$DISKGUARD" -v
   [ "$status" -eq 0 ]
-  [[ "$output" =~ "1.0.0" ]]
+  [[ "$output" =~ 1.0.0 ]]
 }
 
 # Test Darwin check (mock uname for testing)
 @test "fails on non-Darwin systems" {
   # Create a mock uname that returns Linux
+  # shellcheck disable=2028
   echo '#!/bin/bash\necho "Linux"' > "$TEST_TMP_DIR/uname"
   chmod +x "$TEST_TMP_DIR/uname"
     
@@ -131,6 +132,7 @@ teardown() {
   source "$DISKGUARD"
     
   # Mock diskutil info to return readonly status
+  # shellcheck disable=2329
   function diskutil() {
     if [[ "$1" == "info" ]]; then
       echo "Volume Read-Only:             Yes"
@@ -145,7 +147,8 @@ teardown() {
 @test "is_readonly returns false for writable disk" {
   # shellcheck source=/dev/null
   source "$DISKGUARD"
-    
+  
+  # shellcheck disable=2329
   function diskutil() {
     if [[ "$1" == "info" ]]; then
       echo "Volume Read-Only:             No"
@@ -161,7 +164,8 @@ teardown() {
 @test "is_mounted returns true for mounted disk" {
   # shellcheck source=/dev/null
   source "$DISKGUARD"
-    
+  
+  # shellcheck disable=2329
   function diskutil() {
     if [[ "$1" == "info" ]]; then
       echo "Mounted:                      Yes"
