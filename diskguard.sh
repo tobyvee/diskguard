@@ -33,6 +33,7 @@ TMP_PATH='/tmp/diskguard/'
 TMP_FILE_PREV='diskguard_watch_prev'
 TMP_FILE_NEXT='diskguard_watch_next'
 
+# Display ASCII art banner
 banner() {
   echo "·▄▄▄▄  ▪  .▄▄ · ▄ •▄  ▄▄ • ▄• ▄▌ ▄▄▄· ▄▄▄  ·▄▄▄▄  ";
   echo "██▪ ██ ██ ▐█ ▀. █▌▄▌▪▐█ ▀ ▪█▪██▌▐█ ▀█ ▀▄ █·██▪ ██ ";
@@ -41,6 +42,7 @@ banner() {
   echo "▀▀▀▀▀• ▀▀▀ ▀▀▀▀ ·▀  ▀·▀▀▀▀  ▀▀▀  ▀  ▀ .▀  ▀▀▀▀▀▀• ";
 }
 
+# Display usage information
 usage() {
   echo "Usage: $0 <disk identifier (optional)> [-h] [-v] [-a] [-w] [-l] [-t]"
   echo "  -h, --help    Display this help message."
@@ -53,11 +55,13 @@ usage() {
   exit 0
 }
 
+# Display version number
 version() {
   echo "$VERSION"
   exit 0
 }
 
+# Verify script is running with root privileges
 check_permissions() {
   # Check if running as root
   if [ "$EUID" -ne 0 ]; then 
@@ -65,34 +69,41 @@ check_permissions() {
   fi
 }
 
+# Verify script is running on macOS
 check_darwin() {
   if [ "$(uname)" != "Darwin" ]; then
     fatal "Error: This script is only supported on macOS"
   fi
 }
 
+# Create log directory if it doesn't exist
 ensure_log_path() {
   ensure_dir "$LOG_PATH"
 }
 
+# Create log file if it doesn't exist
 ensure_log_file() {
   ensure_file "$LOG_PATH$LOG_FILE"
 }
 
+# Create temporary directory if it doesn't exist
 ensure_tmp_path() {
   ensure_dir "$TMP_PATH"
 }
 
+# Create temporary files if they don't exist
 ensure_tmp_files() {
   ensure_file "$TMP_PATH$TMP_FILE_PREV"
   ensure_file "$TMP_PATH$TMP_FILE_NEXT"
 }
 
+# Remove temporary files
 cleanup_tmp_files() {
   rm -f "$TMP_PATH$TMP_FILE_PREV"
   rm -f "$TMP_PATH$TMP_FILE_NEXT"
 }
 
+# Initialize all required directories and files
 ensure_paths() {
   ensure_log_path
   ensure_log_file
@@ -100,29 +111,33 @@ ensure_paths() {
   ensure_tmp_files
 }
 
+# Perform initial setup checks and initialization
 setup() {
   check_permissions
   check_darwin
   ensure_paths
 }
 
+# Set up cleanup trap for temporary files
 cleanup() {
   trap cleanup_tmp_files EXIT
 }
 
+# Create directory if it doesn't exist
 ensure_dir() {
   if [ ! -d "$1" ]; then
     mkdir -p "$1"
   fi
 }
 
+# Create file if it doesn't exist
 ensure_file() {
   if [ ! -f "$1" ]; then
     touch "$1"
   fi
 }
 
-# TODO: Add logging
+# Append message to log file
 append_log() {
   local LOG="$1"
   ensure_log_path
@@ -130,11 +145,12 @@ append_log() {
   echo "$LOG" >> "$LOG_PATH$LOG_FILE"
 }
 
+# Display info message
 info() {
   echo -e "Info: $1"
 }
 
-# TODO: Test implementation
+# Block all USB volumes (not implemented)
 block_all() {
   echo -e "Not implemented."
   exit 1
@@ -147,6 +163,7 @@ block_all() {
   # fi
 }
 
+# Block a single USB volume by remounting as read-only
 block_one() {
   local DISK="$1"
   
@@ -170,40 +187,43 @@ block_one() {
   fi
 }
 
-# TODO: Implementation
+# Watch for newly mounted volumes (not implemented)
 watch() {
   echo -e "Not implemented."
   exit 0
 }
 
-# TODO: Implementation. Make retrieving info faster by only calling diskutil once per disk.
+# Get disk information and pass to callback function
 get_disk_info() {
-  local DISK_INFO
-  DISK_INFO=$(diskutil info "$1" 2>/dev/null);
-  echo "Not yet implemented."
-  exit 1
+  diskutil info "$1" 2>/dev/null
 }
 
+# Extract volume mount point from disk info
 get_volume_mount() {
-  echo -e "$(diskutil info "$1" 2>/dev/null | grep "Mount Point:" | cut -d: -f2 | xargs)"
+  echo -e "$(echo "$1" | grep "Mount Point:" | cut -d: -f2 | xargs)"
 }
 
+# Extract device node from disk info
 get_disk_mount() {
-  echo -e "$(diskutil info "$1" 2>/dev/null | grep "Device Node:" | cut -d: -f2 | xargs)"
+  echo -e "$(echo "$1" | grep "Device Node:" | cut -d: -f2 | xargs)"
 }
 
+# Extract disk size from disk info
 get_disk_size() {
-  echo -e "$(diskutil info "$1" 2>/dev/null | grep "Disk Size:" | cut -d: -f2 | grep -oE "[0-9]+\.[0-9]+ [A-Z]{2}" | head -1)" || echo -e "Unknown"
+  echo -e "$(echo "$1" | grep "Disk Size:" | cut -d: -f2 | grep -oE "[0-9]+\.[0-9]+ [A-Z]{2}" | head -1)" || echo -e "Unknown"
 }
 
+# Extract file system type from disk info
 get_disk_fs() {
-  echo -e "$(diskutil info "$1" 2>/dev/null | grep "File System Personality:" | cut -d: -f2 | xargs)" || echo -e "Unknown"
+  echo -e "$(echo "$1" | grep "File System Personality:" | cut -d: -f2 | xargs)" || echo -e "Unknown"
 }
 
+# Extract volume name from disk info
 get_disk_volume_name() {
-  echo -e "$(diskutil info "$1" 2>/dev/null | grep "Volume Name:" | cut -d: -f2 | xargs)" || echo -e "Untitled"
+  echo -e "$(echo "$1" | grep "Volume Name:" | cut -d: -f2 | xargs)" || echo -e "Untitled"
 }
 
+# Get colored write status for disk
 get_disk_write_status() {
   if is_readonly "$1"; then
     echo -e "${GREEN}[READ-ONLY]${RESET}"
@@ -212,6 +232,7 @@ get_disk_write_status() {
   fi
 }
 
+# Check if disk is mounted
 is_mounted() {
   local MOUNTED 
   MOUNTED="$(diskutil info "$1" 2>/dev/null | grep "Mounted:" | cut -d: -f2 | xargs)"
@@ -221,6 +242,7 @@ is_mounted() {
   return 0
 }
 
+# Check if disk is writable
 is_writable() {
   if [ "$(diskutil info "$1" | grep "Volume Read-Only:" | cut -d: -f2 | xargs)" = "Yes" ]; then
     return 1
@@ -228,18 +250,21 @@ is_writable() {
   return 0
 }
 
+# Unmount disk
 unmount_disk() {
   if ! diskutil unmount "$1"; then 
     fatal "Error: Failed to unmount $1"
   fi 
 }
 
+# Mount disk in read-only mode
 mount_disk_readonly() {
   if ! diskutil mount readOnly "$1"; then
     fatal "Error: Failed to mount $1 in readonly mode"
   fi
 }
 
+# Check if disk is read-only
 is_readonly() {
   if [ "$(diskutil info "$1" | grep "Volume Read-Only:" | cut -d: -f2 | xargs)" = "No" ]; then
     return 1
@@ -247,12 +272,14 @@ is_readonly() {
   return 0
 }
 
+# Populate array with external USB disk identifiers
 get_disk_ids() {
   while IFS= read -r LINE; do
     DISKS_ARR+=("$(echo "$LINE" | awk '{print $NF}')")
   done < <(diskutil list external physical | grep -E "^\s+[0-9]:")
 }
 
+# Display list of all external USB volumes
 list() {
   if [ ${#DISKS_ARR[@]} -gt 0 ]; then
 
@@ -261,11 +288,12 @@ list() {
     for i in "${DISKS_ARR[@]}"; do 
 
       ID="$i"
+      DISK_INFO=$(get_disk_info "$ID")
       STATUS=$(get_disk_write_status "$ID")
-      NAME=$(get_disk_volume_name "$ID")
-      SIZE=$(get_disk_size "$ID")
-      FS=$(get_disk_fs "$ID") || "Unknown"
-      MOUNT=$(get_volume_mount "$ID") || "Not Mounted"
+      NAME=$(get_disk_volume_name "$DISK_INFO")
+      SIZE=$(get_disk_size "$DISK_INFO")
+      FS=$(get_disk_fs "$DISK_INFO") || "Unknown"
+      MOUNT=$(get_volume_mount "$DISK_INFO") || "Not Mounted"
 
       if [ "$(echo "$ID" | grep -E "^disk[0-9]+s[0-9]+")" ]; then
         printf "%s\t%s\t\t%s\t%s\t\t%s\t\t\t%s\n" "$STATUS" "$ID" "$NAME" "$SIZE" "$FS" "$MOUNT"
@@ -279,6 +307,7 @@ list() {
   exit 0
 }
 
+# Test if a disk is read-only
 test() {
   local DISK="$1"
   if [ -z "$DISK" ]; then
@@ -296,6 +325,7 @@ test() {
   exit 0
 }
 
+# Parse command line arguments
 parse_args() {
   while [ $# -gt 0 ]; do
     case $1 in 
@@ -313,6 +343,7 @@ parse_args() {
   done
 }
 
+# Main entry point
 function main() {
     setup
     get_disk_ids
