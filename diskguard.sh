@@ -172,6 +172,7 @@ watch() {
   local PREV_DISKS_ARR=("${DISKS_ARR[@]}")
   while true; do 
     get_disk_ids
+    # TODO: Improve array comparison
     if [ ${#DISKS_ARR[@]} -gt ${#PREV_DISKS_ARR[@]} ]; then
       for i in "${DISKS_ARR[@]}"; do
         if [[ ! "${PREV_DISKS_ARR[*]}" =~ ${i} ]]; then
