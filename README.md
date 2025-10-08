@@ -64,4 +64,12 @@ Volume USB0-64GB on /dev/disk5s1 mounted
 Success: disk5s1 is read-only
 ```
 
+## Tests
+
+Tests are written using the [bats testing framework](https://github.com/bats-core/bats-core). To test, run the following command (requires homebrew if bats is not installed):
+
+```bash
+make test
+```
+
 
