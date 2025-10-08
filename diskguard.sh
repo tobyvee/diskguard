@@ -7,7 +7,7 @@
 # ▀▀▀▀▀• ▀▀▀ ▀▀▀▀ ·▀  ▀·▀▀▀▀  ▀▀▀  ▀  ▀ .▀  ▀▀▀▀▀▀•
 
 # `diskguard` is a software based, USB disk write blocker for MacOS. 
-# It works by detecting when an external USB disk is mounted and then remounts it in readonly mode.
+# It works by detecting when an external USB disk is mounted and then remounts it in read-only mode.
 
 # **IMPORTANT:** This method may not be forensically sound. 
 # If chain of custody is important use a hardware based write-blocker instead of this tool.
@@ -21,8 +21,6 @@ set -euo pipefail
 source 'utils/errors/fatal.sh'
 # shellcheck source=/dev/null
 source 'utils/strings/colors.sh'
-# shellcheck source=/dev/null
-source 'utils/datetime/timestamp.sh'
 
 VERSION='1.0.0'
 DISK_ID=''
@@ -46,11 +44,11 @@ usage() {
   echo ""
   echo "  -h, --help    Display this help message."
   echo "  -v, --version Display version information."
-  echo "  -a, --all     Set readonly all USB volumes."
+  echo "  -a, --all     Set read-only all USB volumes."
   echo "  -b, --block   Write-block a single USB volume. Disk identifier argument required."
   echo "  -w, --watch   Watch for newly mounted volumes."
   echo "  -l, --list    Display all USB volumes. Default."
-  echo "  -t, --test    Test a volume is readonly. Disk identifier argument required."
+  echo "  -t, --test    Test a volume is read-only. Disk identifier argument required."
   echo ""
   exit 0
 }
@@ -65,14 +63,14 @@ version() {
 check_permissions() {
   # Check if running as root
   if [ "$EUID" -ne 0 ]; then 
-    fatal "Error: This script must be run with sudo"
+    fatal "Error: This script must be run with sudo" | append_log
   fi
 }
 
 # Verify script is running on macOS
 check_darwin() {
   if [ "$(uname)" != "Darwin" ]; then
-    fatal "Error: This script is only supported on macOS"
+    fatal "Error: This script is only supported on macOS" | append_log
   fi
 }
 
@@ -113,15 +111,17 @@ ensure_file() {
   fi
 }
 
-# Append message to log file
-# TODO: Apply standard log format
-# TODO: Implement logging
+prefix() {
+  sed "s/^/$1/"
+}
+
+# Log message with timestamp to file and display clean output to stdout
+# TODO: Standardise log format
 append_log() {
-  local LOG
-  LOG="[$(timestamp)] $1"
-  ensure_log_path
-  ensure_log_file
-  echo "$LOG" >> "$LOG_PATH$LOG_FILE"
+  while IFS= read -r line; do
+    echo "$(date): $line" >> "$LOG_PATH$LOG_FILE"
+    echo "$line"
+  done
 }
 
 # Display info message
@@ -136,7 +136,7 @@ block_all() {
       block_one "$i"
     done
   else
-    fatal "No external USB volumes found"
+    fatal "No external USB volumes found" | append_log
   fi
 }
 
@@ -146,14 +146,14 @@ block_one() {
   local DISK_INFO
   
   if [ -z "$DISK" ]; then
-    fatal "Error: Disk identifier is required"
+    fatal "Error: Disk identifier is required" | append_log
   fi
   if ! is_mounted "$DISK"; then
-    fatal "Error: $DISK is not mounted"
+    fatal "Error: $DISK is not mounted" | append_log
   fi
   # TODO: Check disk / volume mount error
   if is_readonly "$DISK"; then 
-    info "$DISK is already read-only"
+    info "$DISK is already read-only" | append_log
   fi
   
   DISK_INFO=$(get_disk_info "$1")
@@ -162,20 +162,20 @@ block_one() {
   mount_disk_readonly "$MOUNT"
 
   if is_readonly "$DISK"; then
-    echo -e "${GREEN}Success: $DISK is read-only${RESET}"
+    echo -e "${GREEN}Success: $DISK is read-only${RESET}" | append_log
   fi
 }
 
 # Watch for newly mounted volumes
 watch() {
-  echo -e "Watching for new volumes... (ctrl+c to cancel)"
+  echo -e "Watching for new volumes... (ctrl+c to cancel)" | append_log
   local PREV_DISKS_ARR=("${DISKS_ARR[@]}")
   while true; do 
     get_disk_ids
     if [ ${#DISKS_ARR[@]} -gt ${#PREV_DISKS_ARR[@]} ]; then
       for i in "${DISKS_ARR[@]}"; do
         if [[ ! "${PREV_DISKS_ARR[*]}" =~ ${i} ]]; then
-          echo -e "${GREEN}New USB volume detected!${RESET}"
+          echo -e "${GREEN}New USB volume detected!${RESET}" | append_log
           block_one "$i"
         fi
       done
@@ -245,14 +245,14 @@ is_writable() {
 # Unmount disk
 unmount_disk() {
   if ! diskutil unmount "$1"; then 
-    fatal "Error: Failed to unmount $1"
+    fatal "Error: Failed to unmount $1" | append_log
   fi 
 }
 
 # Mount disk in read-only mode
 mount_disk_readonly() {
   if ! diskutil mount readOnly "$1"; then
-    fatal "Error: Failed to mount $1 in readonly mode"
+    fatal "Error: Failed to mount $1 in read-only mode" | append_log
   fi
 }
 
@@ -279,7 +279,7 @@ get_disk_ids() {
 list() {
   if [ ${#DISKS_ARR[@]} -gt 0 ]; then
 
-    printf "%s\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n" "STATUS" "ID" "NAME" "SIZE" "FILE SYSTEM" "MOUNT"
+    printf "%s\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n" "STATUS" "ID" "NAME" "SIZE" "FILE SYSTEM" "MOUNT" | append_log
 
     for i in "${DISKS_ARR[@]}"; do 
 
@@ -292,13 +292,13 @@ list() {
       MOUNT=$(get_volume_mount "$DISK_INFO")
 
       if grep -Eq "^disk[0-9]+s[0-9]+" < <(echo "$ID"); then
-        printf "%s\t%s\t\t%s\t%s\t\t%s\t\t\t%s\n" "$STATUS" "$ID" "$NAME" "$SIZE" "$FS" "$MOUNT"
+        printf "%s\t%s\t\t%s\t%s\t\t%s\t\t\t%s\n" "$STATUS" "$ID" "$NAME" "$SIZE" "$FS" "$MOUNT" | append_log
       fi
 
     done
 
   else
-    fatal "No external USB volumes found"
+    fatal "No external USB volumes found" | append_log
   fi
   exit 0
 }
@@ -307,16 +307,16 @@ list() {
 test() {
   local DISK="$1"
   if [ -z "$DISK" ]; then
-    fatal "Error: Disk identifier is required"
+    fatal "Error: Disk identifier is required" | append_log
   fi
   if is_mounted "$DISK"; then
     if is_readonly "$DISK"; then
-      echo -e "${GREEN}Disk $DISK is readonly.${RESET}"
+      echo -e "${GREEN}Disk $DISK is read-only.${RESET}" | append_log
     else 
-      echo -e "${RED}Disk $DISK is writable.${RESET}"
+      echo -e "${RED}Disk $DISK is writable.${RESET}" | append_log
     fi
   else
-    fatal "Error: Disk $DISK is not mounted"
+    fatal "Error: Disk $DISK is not mounted" | append_log
   fi
   exit 0
 }
