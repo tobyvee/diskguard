@@ -275,7 +275,11 @@ is_readonly() {
 # Populate array with external USB disk identifiers
 get_disk_ids() {
   while IFS= read -r LINE; do
-    DISKS_ARR+=("$(echo "$LINE" | awk '{print $NF}')")
+    local DISKS_ID
+    DISKS_ID="$(echo "$LINE" | awk '{print $NF}')"
+    if grep -Eq "^disk[0-9]+s[0-9]+" < <(echo "$DISKS_ID"); then
+      DISKS_ARR+=("$DISKS_ID")
+    fi
   done < <(diskutil list external physical | grep -E "^\s+[0-9]:")
 }
 
@@ -292,10 +296,10 @@ list() {
       STATUS=$(get_disk_write_status "$ID")
       NAME=$(get_disk_volume_name "$DISK_INFO")
       SIZE=$(get_disk_size "$DISK_INFO")
-      FS=$(get_disk_fs "$DISK_INFO") || "Unknown"
-      MOUNT=$(get_volume_mount "$DISK_INFO") || "Not Mounted"
+      FS=$(get_disk_fs "$DISK_INFO")
+      MOUNT=$(get_volume_mount "$DISK_INFO")
 
-      if [ "$(echo "$ID" | grep -E "^disk[0-9]+s[0-9]+")" ]; then
+      if grep -Eq "^disk[0-9]+s[0-9]+" < <(echo "$ID"); then
         printf "%s\t%s\t\t%s\t%s\t\t%s\t\t\t%s\n" "$STATUS" "$ID" "$NAME" "$SIZE" "$FS" "$MOUNT"
       fi
 
