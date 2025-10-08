@@ -21,6 +21,8 @@ set -euo pipefail
 source 'utils/errors/fatal.sh'
 # shellcheck source=/dev/null
 source 'utils/strings/colors.sh'
+# shellcheck source=/dev/null
+source 'utils/datetime/timestamp.sh'
 
 VERSION='1.0.0'
 DISK_ID=''
@@ -138,8 +140,10 @@ ensure_file() {
 }
 
 # Append message to log file
+# TODO: Apply standard log format
 append_log() {
-  local LOG="$1"
+  local LOG
+  LOG="[$(timestamp)] $1"
   ensure_log_path
   ensure_log_file
   echo "$LOG" >> "$LOG_PATH$LOG_FILE"
@@ -147,25 +151,24 @@ append_log() {
 
 # Display info message
 info() {
-  echo -e "Info: $1"
+  echo -e "${YELLOW}Info: $1${RESET}"
 }
 
-# Block all USB volumes (not implemented)
+# Block all USB volumes
 block_all() {
-  echo -e "Not implemented."
-  exit 1
-  # if [ ${#DISKS_ARR[@]} -gt 0 ]; then
-  #   for i in "${DISKS_ARR[@]}"; do
-  #     block_one "$i"
-  #   done
-  # else
-  #   fatal "No external USB volumes found"
-  # fi
+  if [ ${#DISKS_ARR[@]} -gt 0 ]; then
+    for i in "${DISKS_ARR[@]}"; do
+      block_one "$i"
+    done
+  else
+    fatal "No external USB volumes found"
+  fi
 }
 
 # Block a single USB volume by remounting as read-only
 block_one() {
   local DISK="$1"
+  local DISK_INFO
   
   if [ -z "$DISK" ]; then
     fatal "Error: Disk identifier is required"
@@ -175,22 +178,36 @@ block_one() {
   fi
   # TODO: Check disk / volume mount error
   if is_readonly "$DISK"; then 
-    info "$DISK is already readonly"
+    info "$DISK is already read-only"
   fi
   
-  MOUNT=$(get_disk_mount "$DISK")
+  DISK_INFO=$(get_disk_info "$1")
+  MOUNT=$(get_disk_mount "$DISK_INFO")
   unmount_disk "$MOUNT"
   mount_disk_readonly "$MOUNT"
 
   if is_readonly "$DISK"; then
-    echo -e "Success: $DISK is readonly\n\n"
+    echo -e "${GREEN}Success: $DISK is read-only${RESET}"
   fi
 }
 
 # Watch for newly mounted volumes (not implemented)
 watch() {
-  echo -e "Not implemented."
-  exit 0
+  echo -e "Watching for new volumes..."
+  local PREV_DISKS_ARR=("${DISKS_ARR[@]}")
+  while true; do 
+    get_disks
+    if [ ${#DISKS_ARR[@]} -gt ${#PREV_DISKS_ARR[@]} ]; then
+      for i in "${DISKS_ARR[@]}"; do
+        if [[ ! "${PREV_DISKS_ARR[*]}" =~ ${i} ]]; then
+          echo -e "${GREEN}New USB volume detected!${RESET}"
+          block_one "$i"
+        fi
+      done
+    fi
+    PREV_DISKS_ARR=("${DISKS_ARR[@]}")
+    sleep 1
+  done
 }
 
 # Get disk information and pass to callback function
