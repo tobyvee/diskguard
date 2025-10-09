@@ -14,10 +14,21 @@
 
 ## Install
 
+### From source
+
 1. Clone this repository
 2. Intialise git submodules `git submodule init`
 3. Run `chmod +x ./diskguard.sh` to make the script executable
 4. Run `./diskguard.sh` (requires root permissions)
+
+### Homebrew
+
+You can also install diskguard via homebrew.
+
+```
+brew tap tobyvee/tap
+brew install diskguard
+```
 
 ## Usage
 
