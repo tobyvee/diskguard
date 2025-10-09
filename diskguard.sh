@@ -17,17 +17,17 @@
 
 set -euo pipefail
 
-# shellcheck source=/dev/null
-source 'utils/errors/fatal.sh'
-# shellcheck source=/dev/null
-source 'utils/strings/colors.sh'
-
 VERSION='1.0.0'
 DISK_ID=''
 declare -a DISKS_ARR=()
 
 LOG_PATH='/var/log/diskguard/'
 LOG_FILE='diskguard.log'
+
+RED='\033[91m'
+YELLOW='\033[93m'
+GREEN='\033[92m'
+RESET='\033[0m'
 
 # Display ASCII art banner
 banner() {
@@ -63,14 +63,14 @@ version() {
 check_permissions() {
   # Check if running as root
   if [ "$EUID" -ne 0 ]; then 
-    fatal "Error: This script must be run with sudo" | append_log
+    fatal "This script must be run with sudo" | append_log
   fi
 }
 
 # Verify script is running on macOS
 check_darwin() {
   if [ "$(uname)" != "Darwin" ]; then
-    fatal "Error: This script is only supported on macOS" | append_log
+    fatal "This script is only supported on macOS" | append_log
   fi
 }
 
@@ -111,8 +111,10 @@ ensure_file() {
   fi
 }
 
-prefix() {
-  sed "s/^/$1/"
+# Display error message and exit
+fatal() {
+  echo -e "${RED}Error: $1${RESET}"
+  exit 1
 }
 
 # Log message with timestamp to file and display clean output to stdout
@@ -146,10 +148,10 @@ block_one() {
   local DISK_INFO
   
   if [ -z "$DISK" ]; then
-    fatal "Error: Disk identifier is required" | append_log
+    fatal "Disk identifier is required" | append_log
   fi
   if ! is_mounted "$DISK"; then
-    fatal "Error: $DISK is not mounted" | append_log
+    fatal "$DISK is not mounted" | append_log
   fi
   # TODO: Check disk / volume mount error
   if is_readonly "$DISK"; then 
@@ -246,14 +248,14 @@ is_writable() {
 # Unmount disk
 unmount_disk() {
   if ! diskutil unmount "$1"; then 
-    fatal "Error: Failed to unmount $1" | append_log
+    fatal "Failed to unmount $1" | append_log
   fi 
 }
 
 # Mount disk in read-only mode
 mount_disk_readonly() {
   if ! diskutil mount readOnly "$1"; then
-    fatal "Error: Failed to mount $1 in read-only mode" | append_log
+    fatal "Failed to mount $1 in read-only mode" | append_log
   fi
 }
 
@@ -308,7 +310,7 @@ list() {
 test() {
   local DISK="$1"
   if [ -z "$DISK" ]; then
-    fatal "Error: Disk identifier is required" | append_log
+    fatal "Disk identifier is required" | append_log
   fi
   if is_mounted "$DISK"; then
     if is_readonly "$DISK"; then
@@ -317,7 +319,7 @@ test() {
       echo -e "${RED}Disk $DISK is writable.${RESET}" | append_log
     fi
   else
-    fatal "Error: Disk $DISK is not mounted" | append_log
+    fatal "Disk $DISK is not mounted" | append_log
   fi
   exit 0
 }
