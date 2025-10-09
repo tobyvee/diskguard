@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-VERSION='1.0.0'
+VERSION='1.1.0'
 DISK_ID=''
 declare -a DISKS_ARR=()
 
