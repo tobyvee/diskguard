@@ -56,7 +56,7 @@ STATUS          ID              NAME            SIZE            FILE SYSTEM     
 
 ```bash
 # Write-block a single drive
-$ ./diskguard.sh disk2s2 -b
+$ ./diskguard.sh disk5s1 -b
 
 Volume USB0-64GB on disk5s1 unmounted
 Volume USB0-64GB on /dev/disk5s1 mounted
